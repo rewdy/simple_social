@@ -249,7 +249,6 @@ function simple_social_block_view($delta = '') {
 			if ($content) {
 				$block['content'] .= check_markup($content['value'], $content['format']);
 			}
-
 			// theme the links...
 			$block['content'] .= theme('item_list', array(
 				'items' => $social_links,
@@ -258,6 +257,7 @@ function simple_social_block_view($delta = '') {
 				),
 			));
 		}
+		drupal_add_js(drupal_get_path('module', 'simple_social') .'/js/simple-social.js');
 		return $block;
 	}
 }
