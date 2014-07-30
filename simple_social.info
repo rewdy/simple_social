@@ -1,0 +1,4 @@
+name = Simple Social Links
+description = This module provides a block with simple social links that do not require loading a lot of extra javascript.
+core = 7.x
+configure = admin/config/content/simple_social

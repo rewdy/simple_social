@@ -1,0 +1,374 @@
+<?php
+/**
+ * @file
+ * A simple module that provides a block with social links.
+ */
+
+
+/**
+ * Implements hook_help()
+ *
+ * Provides basic help information for the module
+ *
+ * @param path
+ *   Which path of the site we're using to display help
+ * @param arg
+ *   Array that holds the current path as returned from arg() function
+ */
+function simple_social_help($path, $arg) {
+	switch ($path) {
+		case "admin/help#simple_social":
+			return '<p>' . t("This module displays social links that do not require proprietary libraries for each social network.") . '</p>';
+			break;
+		case "admin/config/content/simple_social":
+			return '<p>' . t("You can set the number of blocks that will be available on the blocks page. Details options are available on each of the block configuration pages.") . '</p>';
+			break;
+	}
+}
+
+/**
+ * Implements hook_menu()
+ */
+function simple_social_menu() {
+	$items = array();
+	$items['admin/config/content/simple_social'] = array(
+		'title' => 'Simple Social Settings',
+		'description' => 'Configuration for the Simple Social module',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('simple_social_form'),
+		'access arguments' => array('access administration pages'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+	return $items;
+}
+
+/**
+ * Page Callback: Simple Social settings
+ *
+ * @see simple_social_menu()
+ */
+function simple_social_form($form, &$form_state) {
+
+	$form['simple_social_count'] = array(
+		'#type' => 'select',
+		'#title' => t('Number of Blocks'),
+		'#default_value' => variable_get('simple_social_count', 1),
+		'#description' => t('Set the number of sharing blocks that will be available from the blocks page.'),
+		'#options' => array(
+			1 => 1,
+			2 => 2,
+			3 => 3,
+			4 => 4,
+			5 => 5,
+		),
+	);
+
+	return system_settings_form($form);
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function simple_social_block_info() {
+	$blocks_count = variable_get('simple_social_count');
+	for ($i=0; $i<$blocks_count; $i++) {
+		$human_number = $i + 1;
+		$blocks['simple_social_links_' . $i] = array(
+			'info' => t('Simple Social Links') . ' ' . $human_number,
+			'cache' => DRUPAL_CACHE_PER_ROLE,
+		);
+	}
+	return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function simple_social_block_configure($delta = '') {
+
+	if (strpos($delta, 'simple_social_links_') === 0) {
+		// get the block index (will be 4th item, index 3, of array)
+		$block_index = explode('_', $delta)[3];
+
+		// build empty form array
+		$form = array();
+		$form['simple_social_content_' . $block_index] = array(
+			'#type' => 'text_format',
+			'#title' => t('Block body'),
+			'#default_value' => variable_get('simple_social_content_' . $block_index, ''),
+			'#description' => t('Enter some content that will be displayed above the sharing links.'),
+			'#weight' => -3,
+		);
+		$form['simple_social'] = array(
+			'#type' => 'vertical_tabs',
+		);
+		$form['sharing_settings'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Sharing Text'),
+			'#collapsible' => true,
+			'#collapsed' => false,
+			'#description' => t('Set the values that are used for this sharing block.'),
+			'#weight' => -2,
+			'#required' => true,
+			'#group' => 'simple_social',
+		);
+		$form['sharing_settings']['simple_social_text_' . $block_index] = array(
+			'#type' => 'textfield',
+			'#title' => t('Share Text'),
+			'#default_value' => variable_get('simple_social_text_' . $block_index, '[node:title]'),
+			'#description' => t('This sets the text that the block will use when sharing the page. Often this should be set to <code>[node:title]</code>. This field supports tokens.'),
+			'#required' => true,
+			'#group' => 'simple_social',
+		);
+		$form['sharing_settings']['simple_social_url_' . $block_index] = array(
+			'#type' => 'textfield',
+			'#title' => t('Share URL'),
+			'#default_value' => variable_get('simple_social_url_' . $block_index, '[node:url:absolute]'),
+			'#description' => t('This sets the URL that the block will use when sharing the page. Often this should be set to <code>[node:url:absolute]</code>. This field supports tokens.'),
+			'#maxlength' => 120,
+			'#required' => true,
+			'#group' => 'simple_social',
+		);
+		$form['sharing_settings']['token_tree'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Replacement patterns'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+			'#description' => theme('token_tree', array('token_types' => array('node'))),
+		);
+		$form['sharing_icons'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Sharing Icons'),
+			'#collapsible' => true,
+			'#collapsed' => true,
+			'#description' => t('Icon settings for this block.'),
+			'#weight' => -1,
+			'#group' => 'simple_social',
+		);
+		$form['sharing_icons']['simple_social_icons_' . $block_index] = array(
+			'#type' => 'checkbox',
+			'#title' => t('Enable Icons'),
+			'#default_value' => variable_get('simple_social_icons_' . $block_index, 1),
+			'#description' => t('Enable <a href="http://fortawesome.github.io/Font-Awesome/" target="_blank">Font Awesome</a> style icons. <strong>This does not include the Font Awesome icon font</strong>, but only the <code>&lt;i&gt;</code> tag with the *-icon classes. If you would like to use this, you will have to include the Font Awesome font either in your theme or with the <a href="https://www.drupal.org/project/fontawesome" target="_blank">Font Awesome module</a>.'),
+			'#group' => 'simple_social',
+		);
+		$form['sharing_icons']['simple_social_icon_hidetext_' . $block_index] = array(
+			'#type' => 'checkbox',
+			'#title' => t('Hide text'),
+			'#default_value' => variable_get('simple_social_icon_hidetext_' . $block_index, 0),
+			'#description' => t('Hides the text when an icon is visible.'),
+			'#group' => 'simple_social',
+		);
+		$form['sharing_icons']['simple_social_icon_prefix_' . $block_index] = array(
+			'#type' => 'textfield',
+			'#title' => t('Icon Prefix'),
+			'#default_value' => variable_get('simple_social_icon_prefix_' . $block_index, 'fa fa-'),
+			'#description' => t('Set the icon prefix for the included <code>&lt;i&gt;</code> tags.'),
+			'#group' => 'simple_social',
+		);
+		$form['sharing_services'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Sharing Services'),
+			'#collapsible' => true,
+			'#collapsed' => true,
+			'#description' => t('Select which services you would like to be used for this block.'),
+			'#weight' => 0,
+			'#group' => 'simple_social',
+		);
+		$form['sharing_services']['simple_social_services_' . $block_index] = array(
+			'#type' => 'checkboxes',
+			'#title' => t('Services'),
+			'#default_value' => variable_get('simple_social_services_' . $block_index, array('facebook', 'twitter', 'pinterest', 'tumblr', 'gplus', 'email')),
+			'#description' => t('Set the services you would like available for this block.'),
+			'#options' => array(
+				'facebook' => 'Facebook',
+				'twitter' => 'Twitter',
+				'pinterest' => 'Pinterest',
+				'tumblr' => 'Tumblr',
+				'gplus' => 'Google Plus',
+				'adn' => 'App.net',
+				'email' => 'Email',
+			),
+			'#group' => 'simple_social',
+		);
+		return $form;
+		// return simple_social_block_save($form);
+	}
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ * @see simple_social_block_configure();
+ */
+function simple_social_block_save($delta = '', $edit = array()) {
+	if (strpos($delta, 'simple_social_links_') === 0) {
+		foreach ($edit as $key => $value) {
+			variable_set($key, $value);
+		}
+	}
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function simple_social_block_view($delta = '') {
+	// if the block is a simple social links block...
+	if (strpos($delta, 'simple_social_links_') === 0) {
+		// get the block index (will be 4th item, index 3, of array)
+		$block_index = explode('_', $delta)[3];
+
+		$block['subject'] = t('Share');
+		if (user_access('access content')) {
+			// get the current node for token replacements
+			$current_node = menu_get_object();
+			
+			// get settings variables
+			$url = variable_get('simple_social_url_' . $block_index);
+			$text = variable_get('simple_social_text_' . $block_index);
+			$services = variable_get('simple_social_services_' . $block_index);
+			$icons = variable_get('simple_social_icons_' . $block_index);
+			$iconSettings = array(
+				'prefix' => variable_get('simple_social_icon_prefix_' . $block_index, 'fa fa-'),
+				'tag' => 'i',
+				'hide_text' => variable_get('simple_social_icon_hidetext_' . $block_index, false),
+			);
+			$content = variable_get('simple_social_content_' . $block_index, '');
+
+			// replace tokens
+			$url = token_replace($url, array('node' => $current_node));
+			$text = token_replace($text, array('node' => $current_node));
+
+			$icons = ($icons) ? $iconSettings : array();
+
+			// generate the links with the url and text
+			$social_links = simple_social_generate_links($url, $text, $services, $icons);
+
+			$block['content'] = '';
+
+			if ($content) {
+				$block['content'] .= check_markup($content['value'], $content['format']);
+			}
+
+			// theme the links...
+			$block['content'] .= theme('item_list', array(
+				'items' => $social_links,
+				'attributes' => array(
+					'class' => 'sharing-list'
+				),
+			));
+		}
+		return $block;
+	}
+}
+
+/**
+ * Custom functions
+ * ----------------
+ */
+
+/**
+ * Custom function to generate the social links data
+ */
+function simple_social_generate_links($url, $title, $services, $icons) {
+	if (isset($url) && isset($title)) {
+		// process data for urls
+		$url = urlencode($url);
+		$title = urlencode($title);
+		// pull in services data
+		$services_data = simple_social_get_services();
+
+		// build empty links array
+		$links = array();
+
+		// loop through it and do it
+		foreach ($services as $service) {
+			if ($service) {
+				// get the details for this specific service
+				$s_data = $services_data[$service];
+				// get the service url
+				$shareUrl = $s_data['url'];
+				$shareUrl = preg_replace('/{{url}}/', $url, $shareUrl);
+				$shareUrl = preg_replace('/{{title}}/', $title, $shareUrl);
+
+				$link_text = $s_data['label'];
+				if (!empty($icons)) {
+					$icon = simple_social_icon($s_data['icon'], $icons['prefix'], $icons['tag']);
+					$text_class = ($icons['hide_text']) ? 'text element-invisible' : 'text';
+					$text = '<span class="' . $text_class . '">' . $link_text . '</span>';
+					$link_text = $icon . ' ' . $text;
+				}
+				$links[] = array(
+					'data' => l($link_text, $shareUrl, array(
+						'attributes' => array(
+							'class' => $service,
+						), 
+						'html' => true,
+					))
+				);
+			}
+		}
+
+		return $links;
+
+		// return $output;
+	} else {
+		// not enought data. return empty string.
+		return '';
+	}
+}
+
+/**
+ * Funtion to return an array of services information
+ *
+ * For now this is hard-coded. At some point it could be pulled from a database
+ * and there could be an option to add more services from the admin.
+ */
+function simple_social_get_services() {
+	$services['facebook'] = array(
+		'label' => 'Facebook',
+		'url'	=> 'http://www.facebook.com/sharer.php?s=100&amp;p[title]={{title}}&amp;p[url]={{url}}',
+		'icon'	=> 'facebook',
+	);
+	$services['twitter'] = array(
+		'label' => 'Twitter',
+		'url'	=> 'https://twitter.com/intent/tweet?url={{url}}&amp;text={{title}}',
+		'icon'	=> 'twitter',
+	);
+	$services['pinterest'] = array(
+		'label'	=> 'Pinterest',
+		'url'	=> 'http://www.pinterest.com/pin/create/bookmarklet/?url={{url}}&description={{title}}',
+		'icon'	=> 'pinterest',
+		'extra' => 'data-include-script="https://assets.pinterest.com/js/pinmarklet.js?r=' . rand(0, 99999999) . '"',
+	);
+	$services['tumblr'] = array(
+		'label'	=> 'Tumblr',
+		'url'	=> 'http://www.tumblr.com/share/?url={{url}}&description={{title}}',
+		'icon'	=> 'tumblr',
+	);
+	$services['gplus'] = array(
+		'label'	=> 'Google +',
+		'url'	=> 'https://plus.google.com/share?url={{url}}',
+		'icon'	=> 'google-plus',
+	);
+	$services['adn'] = array(
+		'label'	=> 'App.net',
+		'url'	=> 'https://alpha.app.net/intent/post?url={{url}}&amp;text={{title}}',
+		'icon'	=> 'adn',
+	);
+	$services['email']	= array(
+		'label'	=> 'Email',
+		'url'	=> 'mailto:?&amp;Subject={{title}}&amp;Body={{url}}',
+		'icon'	=> 'envelope',
+		'extra' => 'target="_blank"',
+	);
+
+	return $services;
+}
+
+/**
+ * Function to generate icon markup
+ */
+function simple_social_icon($label, $prefix = 'fa fa-', $tag = 'i') {
+	return "<{$tag} class=\"{$prefix}{$label}\"></{$tag}>";
+}
