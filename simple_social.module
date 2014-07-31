@@ -93,7 +93,7 @@ function simple_social_block_configure($delta = '') {
 		// build empty form array
 		$form = array();
 		$form['simple_social_content_' . $block_index] = array(
-			'#type' => 'text_format',
+			'#type' => 'textarea',
 			'#title' => t('Block body'),
 			'#default_value' => variable_get('simple_social_content_' . $block_index, ''),
 			'#description' => t('Enter some content that will be displayed above the sharing links.'),
@@ -134,7 +134,7 @@ function simple_social_block_configure($delta = '') {
 			'#title' => t('Replacement patterns'),
 			'#collapsible' => TRUE,
 			'#collapsed' => TRUE,
-			'#description' => theme('token_tree', array('token_types' => array('node'))),
+			'#description' => theme('token_tree', array('token_types' => array('node', 'url'))),
 		);
 		$form['sharing_icons'] = array(
 			'#type' => 'fieldset',
@@ -236,8 +236,15 @@ function simple_social_block_view($delta = '') {
 			$content = variable_get('simple_social_content_' . $block_index, '');
 
 			// replace tokens
-			$url = token_replace($url, array('node' => $current_node));
-			$text = token_replace($text, array('node' => $current_node));
+			$replacements = array(
+				'node' => $current_node, 
+				'url' => url(),
+			);
+			$options = array(
+				'clear' => true,
+			);
+			$url = token_replace($url, $replacements, $options);
+			$text = token_replace($text, $replacements, $options);
 
 			$icons = ($icons) ? $iconSettings : array();
 
@@ -247,7 +254,7 @@ function simple_social_block_view($delta = '') {
 			$block['content'] = '';
 
 			if ($content) {
-				$block['content'] .= check_markup($content['value'], $content['format']);
+				$block['content'] .= $content;
 			}
 			// theme the links...
 			$block['content'] .= theme('item_list', array(
