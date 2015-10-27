@@ -334,7 +334,7 @@ function simple_social_generate_links($url, $title, $services, $icons) {
 function simple_social_get_services() {
 	$services['facebook'] = array(
 		'label' => 'Facebook',
-		'url'	=> 'http://www.facebook.com/sharer.php?s=100&amp;p[title]={{title}}&amp;p[url]={{url}}',
+		'url'	=> 'https://www.facebook.com/sharer/sharer.php?u={{url}}',
 		'icon'	=> 'facebook',
 	);
 	$services['twitter'] = array(
