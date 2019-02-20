@@ -1,0 +1,32 @@
+<?php
+/**
+ * @file
+ * Simple social links install file. All this does is set default variable values.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function simple_social_install() {
+  // Set default settings
+  variable_set('simple_social_count', 1);
+  variable_set('simple_social_icon_library', 'svg');
+  variable_set('simple_social_icon_custom_prefix', 'fa fa-');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function simple_social_uninstall() {
+  variable_del('simple_social_count');
+  variable_del('simple_social_icon_library');
+  variable_del('simple_social_icon_custom_prefix');
+
+  // ADD: db call to remove all the variables this module adds.
+  // global $conf;
+  // db_delete('variable')
+  //   ->condition('name', 'simple_social_', '')
+  //   ->execute();
+  // cache_clear_all('variables', 'cache_bootstrap');
+  // unset($conf[$name]);
+}

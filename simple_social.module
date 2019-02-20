@@ -62,6 +62,16 @@ function simple_social_form($form, &$form_state) {
 			5 => 5,
 		),
 	);
+	$form['simple_social_icon_library'] = array(
+		'#type' => 'radios',
+		'#title' => t('Icon Library'),
+		'#default_value' => variable_get('simple_social_icon_library', 'svg'),
+		'#description' => t('Set the icons to use for the sharing links. SVGs shipped with the module is the default. If you are already including an icon library such as Font Awesome, you can use that instead. On the block configuration page, you will be given the option to set the class for the icons.'),
+		'#options' => array(
+			"svg" => "SVGs",
+			"custom" => "Custom",
+		),
+	);
 
 	return system_settings_form($form);
 }
@@ -70,7 +80,8 @@ function simple_social_form($form, &$form_state) {
  * Implements hook_block_info().
  */
 function simple_social_block_info() {
-	$blocks_count = variable_get('simple_social_count');
+	$blocks = array();
+	$blocks_count = variable_get('simple_social_count', 1);
 	for ($i=0; $i<$blocks_count; $i++) {
 		$human_number = $i + 1;
 		$blocks['simple_social_links_' . $i] = array(
@@ -149,7 +160,7 @@ function simple_social_block_configure($delta = '') {
 			'#type' => 'checkbox',
 			'#title' => t('Enable Icons'),
 			'#default_value' => variable_get('simple_social_icons_' . $block_index, 1),
-			'#description' => t('Enable <a href="http://fortawesome.github.io/Font-Awesome/" target="_blank">Font Awesome</a> style icons. <strong>This does not include the Font Awesome icon font</strong>, but only the <code>&lt;i&gt;</code> tag with the *-icon classes. If you would like to use this, you will have to include the Font Awesome font either in your theme or with the <a href="https://www.drupal.org/project/fontawesome" target="_blank">Font Awesome module</a>.'),
+			'#description' => t('Include icons with the sharing links.'),
 			'#group' => 'simple_social',
 		);
 		$form['sharing_icons']['simple_social_icon_hidetext_' . $block_index] = array(
@@ -159,13 +170,22 @@ function simple_social_block_configure($delta = '') {
 			'#description' => t('Hides the text when an icon is visible.'),
 			'#group' => 'simple_social',
 		);
-		$form['sharing_icons']['simple_social_icon_prefix_' . $block_index] = array(
-			'#type' => 'textfield',
-			'#title' => t('Icon Prefix'),
-			'#default_value' => variable_get('simple_social_icon_prefix_' . $block_index, 'fa fa-'),
-			'#description' => t('Set the icon prefix for the included <code>&lt;i&gt;</code> tags.'),
-			'#group' => 'simple_social',
-		);
+		if (variable_get('simple_social_icon_library') === 'custom') {
+			$default_icon_prefix = variable_get('simple_social_icon_custom_prefix', 'fa fa-');
+			$form['sharing_icons']['simple_social_icon_prefix_' . $block_index] = array(
+				'#type' => 'textfield',
+				'#title' => t('Icon Prefix'),
+				'#default_value' => variable_get('simple_social_icon_prefix_' . $block_index, $default_icon_prefix),
+				'#description' => t('Set the icon class prefix for the included <code>&lt;i&gt;</code> tags.'),
+				'#group' => 'simple_social',
+			);
+		} else {
+			$form['sharing_icons']['simple_social_icon_prefix_' . $block_index] = array(
+				'#type' => 'hidden',
+				'#value' => 'simple-social-icon simple-social-icon-',
+				'#group' => 'simple_social',
+			);
+		}
 		$form['sharing_services'] = array(
 			'#type' => 'fieldset',
 			'#title' => t('Sharing Services'),
@@ -178,15 +198,13 @@ function simple_social_block_configure($delta = '') {
 		$form['sharing_services']['simple_social_services_' . $block_index] = array(
 			'#type' => 'checkboxes',
 			'#title' => t('Services'),
-			'#default_value' => variable_get('simple_social_services_' . $block_index, array('facebook', 'twitter', 'pinterest', 'tumblr', 'gplus', 'email')),
+			'#default_value' => variable_get('simple_social_services_' . $block_index, array('facebook', 'twitter', 'email')),
 			'#description' => t('Set the services you would like available for this block.'),
 			'#options' => array(
 				'facebook' => 'Facebook',
 				'twitter' => 'Twitter',
 				'pinterest' => 'Pinterest',
 				'tumblr' => 'Tumblr',
-				'gplus' => 'Google Plus',
-				'adn' => 'App.net',
 				'email' => 'Email',
 			),
 			'#group' => 'simple_social',
@@ -264,7 +282,11 @@ function simple_social_block_view($delta = '') {
 				),
 			));
 		}
+		// Add resources
 		drupal_add_js(drupal_get_path('module', 'simple_social') .'/js/simple-social.js');
+		drupal_add_css(drupal_get_path('module', 'simple_social') . '/css/simple_social.css');
+
+		// Return the block
 		return $block;
 	}
 }
@@ -285,6 +307,8 @@ function simple_social_generate_links($url, $title, $services, $icons) {
 		// pull in services data
 		$services_data = simple_social_get_services();
 
+		$use_svg = variable_get('simple_social_icon_library', 'svg') == 'svg' ? true : false;
+
 		// build empty links array
 		$links = array();
 
@@ -300,7 +324,7 @@ function simple_social_generate_links($url, $title, $services, $icons) {
 
 				$link_text = $s_data['label'];
 				if (!empty($icons)) {
-					$icon = simple_social_icon($s_data['icon'], $icons['prefix'], $icons['tag']);
+					$icon = simple_social_icon($s_data['icon'], $use_svg, $icons['prefix'], $icons['tag']);
 					$text_class = ($icons['hide_text']) ? 'text element-invisible' : 'text';
 					$text = '<span class="' . $text_class . '">' . $link_text . '</span>';
 					$link_text = $icon . ' ' . $text;
@@ -353,16 +377,6 @@ function simple_social_get_services() {
 		'url'	=> 'http://www.tumblr.com/share/?url={{url}}&description={{title}}',
 		'icon'	=> 'tumblr',
 	);
-	$services['gplus'] = array(
-		'label'	=> 'Google +',
-		'url'	=> 'https://plus.google.com/share?url={{url}}',
-		'icon'	=> 'google-plus',
-	);
-	$services['adn'] = array(
-		'label'	=> 'App.net',
-		'url'	=> 'https://alpha.app.net/intent/post?url={{url}}&amp;text={{title}}',
-		'icon'	=> 'adn',
-	);
 	$services['email']	= array(
 		'label'	=> 'Email',
 		'url'	=> 'mailto:?&amp;Subject={{title}}&amp;Body={{url}}',
@@ -376,6 +390,14 @@ function simple_social_get_services() {
 /**
  * Function to generate icon markup
  */
-function simple_social_icon($label, $prefix = 'fa fa-', $tag = 'i') {
-	return "<{$tag} class=\"{$prefix}{$label}\"></{$tag}>";
+function simple_social_icon($label, $use_svg = false, $prefix = 'fa fa-', $tag = 'i') {
+	if ($use_svg) {
+		global $base_url;
+		global $base_path;
+		$icon_url = $base_url . $base_path . drupal_get_path('module', 'simple_social') . '/images/icon-sprite.svg';
+		$icon = "<svg class=\"{$prefix}{$label}\"><use xlink:href=\"{$icon_url}#icon-{$label}\"/></svg>";
+	} else {
+		$icon = "<{$tag} class=\"{$prefix}{$label}\"></{$tag}>";
+	}
+	return $icon;
 }

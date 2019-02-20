@@ -1,0 +1,67 @@
+/* 
+ * Simple Social Link CSS
+ */
+ul.sharing-list {
+  margin: 0 0 1em 0;
+  padding: 0;
+}
+ul.sharing-list li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: inline;
+}
+ul.sharing-list li a {
+  display: inline-block;
+  padding: 0.5em 1em;
+  margin: 0 0.25em 0.35em 0;
+  line-height: 1.5em;
+  background-color: #999;
+  color: #ffffff;
+  text-decoration: none;
+}
+@media only screen and (max-width: 640px) {
+  ul.sharing-list li a .text {
+    display: none;
+  }
+}
+ul.sharing-list li a:hover {
+  background-color: #808080;
+}
+ul.sharing-list li a.facebook {
+  background-color: #3b5999;
+  color: #ffffff;
+}
+ul.sharing-list li a.facebook:hover {
+  background-color: #2d4474;
+}
+ul.sharing-list li a.twitter {
+  background-color: #55acee;
+  color: #ffffff;
+}
+ul.sharing-list li a.twitter:hover {
+  background-color: #2795e9;
+}
+ul.sharing-list li a.pinterest {
+  background-color: #bd081c;
+  color: #ffffff;
+}
+ul.sharing-list li a.pinterest:hover {
+  background-color: #8c0615;
+}
+ul.sharing-list li a.tumblr {
+  background-color: #34465d;
+  color: #ffffff;
+}
+ul.sharing-list li a.tumblr:hover {
+  background-color: #222d3c;
+}
+svg.simple-social-icon {
+  width: 1.25em;
+  height: 1em;
+  line-height: 1em;
+  fill: #fff;
+  position: relative;
+  top: 0.04em;
+  left: -0.02em;
+}

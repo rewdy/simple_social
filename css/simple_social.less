@@ -1,0 +1,73 @@
+/* 
+ * Simple Social Link CSS
+ */
+@default-link: #999;
+@breakpoint: 640px;
+
+ul.sharing-list {
+	margin:0 0 1em 0;
+	padding:0;
+	li {
+		margin:0;
+		padding:0;
+		list-style:none;
+		display:inline;
+		a {
+			display:inline-block;
+			padding:0.5em 1em;
+			margin:0 0.25em 0.35em 0;
+			line-height:1.5em;
+			background-color:@default-link;
+            color:contrast(@default-link);
+            text-decoration: none;
+			@media only screen and (max-width: @breakpoint) {
+				.text {
+					display:none;
+				}
+			}
+			&:hover {
+                background-color:darken(@default-link, 10%);
+            }
+		}
+		a.facebook {
+			background-color:#3b5999;
+            color:contrast(#3b5999);
+            &:hover {
+                background-color:darken(#3b5999, 10%);
+            }
+		}
+		a.twitter {
+			background-color:#55acee;
+            color:contrast(#55acee);
+            &:hover {
+                background-color:darken(#55acee, 10%);
+            }
+		}
+		a.pinterest {
+			background-color:#bd081c;
+            color:contrast(#bd081c);
+            &:hover {
+                background-color:darken(#bd081c, 10%);
+            }
+		}
+		a.tumblr {
+			background-color:#34465d;
+            color:contrast(#34465d);
+            &:hover {
+                background-color:darken(#34465d, 10%);
+            }
+		}
+		a.email {
+		}
+	}
+}
+
+svg.simple-social-icon {
+    width:1.25em;
+    height:1em;
+    line-height:1em;
+    fill:#fff;
+    position: relative;
+    top:0.04em;
+    left:-0.02em;
+}
